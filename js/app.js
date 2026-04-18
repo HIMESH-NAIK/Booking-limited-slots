@@ -387,6 +387,234 @@ const BookingSystem = {
         Storage.set('bookings', bookings);
 
         return { success: true, message: 'Booking cancelled' };
+    },
+
+    /**
+     * Get bookings visible to a specific role
+     * CRITICAL: Enforce strict role-based filtering
+     */
+    getVisibleBookings(role, userEmail) {
+        const allBookings = Storage.get('bookings', []);
+
+        if (role === 'student') {
+            // Students ONLY see their own bookings
+            return allBookings.filter(b => b.email === userEmail);
+        } else if (role === 'teacher') {
+            // Teachers see:
+            // - Their own bookings
+            // - All student bookings
+            // - All admin bookings
+            return allBookings.filter(b => 
+                b.email === userEmail ||  // Own bookings
+                b.role === 'student' ||   // Student bookings
+                b.role === 'admin'        // Admin bookings
+            );
+        } else if (role === 'admin') {
+            // Admin sees all bookings
+            return allBookings;
+        }
+
+        return [];
+    }
+};
+
+// ============================================
+// PROFILE & SETTINGS MANAGEMENT
+// ============================================
+
+const ProfileSystem = {
+    /**
+     * Get user profile
+     */
+    getProfile(email) {
+        const profiles = Storage.get('userProfiles', {});
+        if (!profiles[email]) {
+            profiles[email] = {
+                email: email,
+                name: email.split('@')[0],
+                role: Auth.getRole(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            Storage.set('userProfiles', profiles);
+        }
+        return profiles[email];
+    },
+
+    /**
+     * Update user profile
+     */
+    updateProfile(email, updates) {
+        const profiles = Storage.get('userProfiles', {});
+        if (profiles[email]) {
+            profiles[email] = {
+                ...profiles[email],
+                ...updates,
+                email: email, // Prevent email change
+                role: Auth.getRole(), // Prevent role change
+                updatedAt: new Date().toISOString()
+            };
+            Storage.set('userProfiles', profiles);
+            return { success: true, message: 'Profile updated', profile: profiles[email] };
+        }
+        return { success: false, message: 'Profile not found' };
+    }
+};
+
+// ============================================
+// TEACHER MESSAGE & NOTIFICATION SYSTEM
+// ============================================
+
+const MessageSystem = {
+    /**
+     * Send message from teacher to students
+     */
+    sendTeacherMessage(teacherEmail, messageText, recipientType = 'all') {
+        const message = {
+            id: `msg-${Date.now()}`,
+            from: teacherEmail,
+            fromRole: 'teacher',
+            text: messageText,
+            recipientType: recipientType, // 'all' or specific student email
+            createdAt: new Date().toISOString(),
+            read: false
+        };
+
+        const messages = Storage.get('messages', []);
+        messages.push(message);
+        Storage.set('messages', messages);
+
+        return { success: true, message: 'Message sent', messageId: message.id };
+    },
+
+    /**
+     * Get messages for a user
+     */
+    getUserMessages(userEmail, userRole) {
+        const messages = Storage.get('messages', []);
+
+        if (userRole === 'teacher') {
+            // Teachers see their own sent messages
+            return messages.filter(m => m.from === userEmail).sort((a, b) => 
+                new Date(b.createdAt) - new Date(a.createdAt)
+            );
+        } else if (userRole === 'student') {
+            // Students see messages directed to them
+            return messages.filter(m => 
+                m.recipientType === 'all' || m.recipientType === userEmail
+            ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+
+        return [];
+    },
+
+    /**
+     * Mark message as read
+     */
+    markAsRead(messageId) {
+        const messages = Storage.get('messages', []);
+        const message = messages.find(m => m.id === messageId);
+        if (message) {
+            message.read = true;
+            Storage.set('messages', messages);
+            return { success: true };
+        }
+        return { success: false };
+    },
+
+    /**
+     * Get unread message count
+     */
+    getUnreadCount(userEmail, userRole) {
+        const messages = this.getUserMessages(userEmail, userRole);
+        return messages.filter(m => !m.read).length;
+    }
+};
+
+// ============================================
+// RESOURCE LIMIT MANAGEMENT (ADMIN + TEACHER)
+// ============================================
+
+const ResourceLimitSystem = {
+    /**
+     * Get resource limits
+     */
+    getResourceLimits() {
+        return Storage.get('resourceLimits', {});
+    },
+
+    /**
+     * Update resource limit (Admin/Teacher only)
+     */
+    updateResourceLimit(resourceId, newLimit, role) {
+        if (!['admin', 'teacher'].includes(role)) {
+            return { success: false, message: 'Insufficient permissions' };
+        }
+
+        const limits = this.getResourceLimits();
+        limits[resourceId] = newLimit;
+        Storage.set('resourceLimits', limits);
+
+        return { success: true, message: 'Resource limit updated', limit: newLimit };
+    },
+
+    /**
+     * Get limit for resource
+     */
+    getLimit(resourceId) {
+        const limits = this.getResourceLimits();
+        // Return custom limit or default (from RESOURCES definition)
+        return limits[resourceId] || BookingSystem.RESOURCES[resourceId].slots;
+    }
+};
+
+// ============================================
+// CHAT BOT SYSTEM
+// ============================================
+
+const ChatBotSystem = {
+    // Simple scripted responses
+    responses: [
+        {
+            keywords: ['hello', 'hi', 'hey'],
+            response: '👋 Hello! Welcome to ResBook. How can I help you today?'
+        },
+        {
+            keywords: ['booking', 'how', 'book', 'reserve'],
+            response: '📅 To book a resource:\n1. Go to "Book Resource"\n2. Select resource & date\n3. Pick a time slot\n4. Confirm your booking'
+        },
+        {
+            keywords: ['cancel', 'delete', 'remove'],
+            response: '❌ To cancel a booking, view it in your dashboard and click cancel. Your slot will be released.'
+        },
+        {
+            keywords: ['resources', 'available', 'what'],
+            response: '🏛️ Available resources depend on your role. Check your dashboard to see what you can access.'
+        },
+        {
+            keywords: ['help', 'support', 'issue', 'problem'],
+            response: '🆘 For support issues, please contact your administrator or check the FAQ section.'
+        },
+        {
+            keywords: ['time', 'slot', 'hours', 'when'],
+            response: '⏰ Booking slots run from 9:00 AM onwards. Each slot is 1 hour. Check availability when booking.'
+        }
+    ],
+
+    /**
+     * Get bot response
+     */
+    getResponse(userMessage) {
+        const msg = userMessage.toLowerCase().trim();
+
+        for (let item of this.responses) {
+            if (item.keywords.some(keyword => msg.includes(keyword))) {
+                return item.response;
+            }
+        }
+
+        // Default response
+        return '🤖 I didn\'t quite understand that. Try asking about bookings, resources, or cancellations!';
     }
 };
 
@@ -574,6 +802,9 @@ function initStudentDashboard() {
     setupDashboardLogout();
     setupStudentStats();
     setupBookingNavigation();
+    setupProfileSection();
+    setupChatBot();
+    setupNotifications();
 }
 
 function setupStudentStats() {
@@ -629,6 +860,10 @@ function initTeacherDashboard() {
     setupDashboardLogout();
     setupTeacherStats();
     setupBookingNavigation();
+    setupProfileSection();
+    setupChatBot();
+    setupTeacherMessages();
+    setupNotifications();
 }
 
 function setupTeacherStats() {
@@ -676,6 +911,9 @@ function initAdminDashboard() {
     setupDashboardLogout();
     setupAdminStats();
     setupAdminTabs();
+    setupProfileSection();
+    setupChatBot();
+    setupNotifications();
 }
 
 function setupAdminStats() {
@@ -750,6 +988,7 @@ function initBookingPage() {
 
     setupDashboardLogout();
     setupBookingForm();
+    setupChatBot();
 }
 
 function setupBookingForm() {
@@ -856,6 +1095,212 @@ function setupDashboardLogout() {
             }
         });
     }
+}
+
+// ============================================
+// PROFILE & SETTINGS INITIALIZATION
+// ============================================
+
+function setupProfileSection() {
+    const user = Auth.getUser();
+    const role = Auth.getRole();
+    const profileNameEl = document.getElementById('profileName');
+    const profileEmailEl = document.getElementById('profileEmail');
+    const profileRoleEl = document.getElementById('profileRole');
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const profileForm = document.getElementById('profileForm');
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+    const cancelProfileBtn = document.getElementById('cancelProfileBtn');
+
+    if (!user) return;
+
+    // Load and display profile
+    const profile = ProfileSystem.getProfile(user.email);
+
+    if (profileNameEl) profileNameEl.textContent = profile.name;
+    if (profileEmailEl) profileEmailEl.textContent = profile.email;
+    if (profileRoleEl) profileRoleEl.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+
+    // Edit profile
+    if (editProfileBtn) {
+        editProfileBtn.addEventListener('click', function() {
+            if (profileForm) {
+                profileForm.style.display = profileForm.style.display === 'none' ? 'block' : 'none';
+                const nameInput = document.getElementById('editProfileName');
+                if (nameInput) nameInput.value = profile.name;
+            }
+        });
+    }
+
+    // Save profile changes
+    if (saveProfileBtn) {
+        saveProfileBtn.addEventListener('click', function() {
+            const nameInput = document.getElementById('editProfileName');
+            if (nameInput && nameInput.value.trim()) {
+                const result = ProfileSystem.updateProfile(user.email, { name: nameInput.value.trim() });
+                if (result.success) {
+                    UI.showAlert('✓ Profile updated', 'success');
+                    if (profileNameEl) profileNameEl.textContent = result.profile.name;
+                    if (profileForm) profileForm.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    // Cancel edit
+    if (cancelProfileBtn) {
+        cancelProfileBtn.addEventListener('click', function() {
+            if (profileForm) profileForm.style.display = 'none';
+        });
+    }
+}
+
+// ============================================
+// CHAT BOT INITIALIZATION
+// ============================================
+
+function setupChatBot() {
+    const chatContainer = document.getElementById('chatBotWidget');
+    const chatToggle = document.getElementById('chatToggle');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const chatSendBtn = document.getElementById('chatSendBtn');
+
+    if (!chatToggle || !chatMessages || !chatInput) return;
+
+    let chatOpen = false;
+
+    // Toggle chat visibility
+    chatToggle.addEventListener('click', function() {
+        chatOpen = !chatOpen;
+        if (chatContainer) {
+            chatContainer.style.display = chatOpen ? 'flex' : 'none';
+        }
+        chatToggle.innerHTML = chatOpen ? '✕' : '💬';
+    });
+
+    // Send chat message
+    function sendMessage() {
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        // Add user message
+        const userMsgEl = document.createElement('div');
+        userMsgEl.className = 'chat-message user-message';
+        userMsgEl.textContent = message;
+        chatMessages.appendChild(userMsgEl);
+
+        // Get bot response
+        const botResponse = ChatBotSystem.getResponse(message);
+
+        // Add bot response
+        setTimeout(() => {
+            const botMsgEl = document.createElement('div');
+            botMsgEl.className = 'chat-message bot-message';
+            botMsgEl.textContent = botResponse;
+            chatMessages.appendChild(botMsgEl);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 500);
+
+        chatInput.value = '';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    chatSendBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') sendMessage();
+    });
+}
+
+// ============================================
+// NOTIFICATIONS INITIALIZATION
+// ============================================
+
+function setupNotifications() {
+    const user = Auth.getUser();
+    const role = Auth.getRole();
+    const notifBell = document.getElementById('notificationBell');
+    const notifDropdown = document.getElementById('notificationDropdown');
+    const notifBadge = document.getElementById('notificationBadge');
+
+    if (!notifBell || !notifDropdown) return;
+
+    // Toggle notification dropdown
+    notifBell.addEventListener('click', function(e) {
+        e.stopPropagation();
+        notifDropdown.style.display = notifDropdown.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function() {
+        notifDropdown.style.display = 'none';
+    });
+
+    // Update unread count
+    function updateNotifications() {
+        const messages = MessageSystem.getUserMessages(user.email, role);
+        const unreadCount = messages.filter(m => !m.read).length;
+
+        if (notifBadge) {
+            notifBadge.textContent = unreadCount;
+            notifBadge.style.display = unreadCount > 0 ? 'block' : 'none';
+        }
+
+        // Display messages in dropdown
+        notifDropdown.innerHTML = '';
+        if (messages.length === 0) {
+            notifDropdown.innerHTML = '<div class="notif-item">No notifications</div>';
+        } else {
+            messages.forEach(msg => {
+                const notifEl = document.createElement('div');
+                notifEl.className = `notif-item ${msg.read ? 'read' : 'unread'}`;
+                notifEl.innerHTML = `
+                    <p><strong>📧 Teacher Message</strong></p>
+                    <p>${msg.text}</p>
+                    <small>${new Date(msg.createdAt).toLocaleDateString()}</small>
+                `;
+                notifEl.addEventListener('click', () => {
+                    MessageSystem.markAsRead(msg.id);
+                    updateNotifications();
+                });
+                notifDropdown.appendChild(notifEl);
+            });
+        }
+    }
+
+    // Initial update and periodic refresh
+    updateNotifications();
+    setInterval(updateNotifications, 5000);
+}
+
+// ============================================
+// TEACHER MESSAGE SYSTEM INITIALIZATION
+// ============================================
+
+function setupTeacherMessages() {
+    const sendMsgBtn = document.getElementById('sendMessageBtn');
+    const messageInput = document.getElementById('teacherMessageInput');
+    const recipientSelect = document.getElementById('recipientSelect');
+
+    if (!sendMsgBtn || !messageInput) return;
+
+    const user = Auth.getUser();
+
+    sendMsgBtn.addEventListener('click', function() {
+        const text = messageInput.value.trim();
+        const recipient = recipientSelect ? recipientSelect.value : 'all';
+
+        if (!text) {
+            UI.showAlert('Please type a message', 'error');
+            return;
+        }
+
+        const result = MessageSystem.sendTeacherMessage(user.email, text, recipient);
+        if (result.success) {
+            UI.showAlert('✓ Message sent to ' + (recipient === 'all' ? 'all students' : 'student'), 'success');
+            messageInput.value = '';
+        }
+    });
 }
 
 // ============================================

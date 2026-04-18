@@ -34,17 +34,27 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Header -->
+            <!-- Header with Notifications -->
             <div class="header">
                 <div>
                     <h1>Student Dashboard</h1>
                     <p class="text-muted">Manage your bookings</p>
                 </div>
-                <div class="user-info">
-                    <div class="user-avatar">👤</div>
-                    <div>
-                        <div class="user-name" id="userName">Student</div>
-                        <div class="user-role" id="userRole">Student</div>
+                <div class="header-right">
+                    <div class="notification-center">
+                        <button id="notificationBell" class="notif-bell">🔔
+                            <span id="notificationBadge" class="notif-badge">0</span>
+                        </button>
+                        <div id="notificationDropdown" class="notif-dropdown" style="display: none;">
+                            <div class="notif-item">No notifications</div>
+                        </div>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-avatar">👤</div>
+                        <div>
+                            <div class="user-name" id="userName">Student</div>
+                            <div class="user-role" id="userRole">Student</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -63,6 +73,29 @@
                     <div class="stat-label">Upcoming Bookings</div>
                     <div class="stat-value" id="upcomingBookings">0</div>
                 </div>
+            </div>
+
+            <!-- Profile Section -->
+            <div class="card card-profile">
+                <div class="card-header">
+                    <h2>👤 Profile</h2>
+                    <button id="editProfileBtn" class="btn btn-sm btn-secondary">Edit</button>
+                </div>
+                <div id="profileDisplay" class="profile-display">
+                    <p><strong>Name:</strong> <span id="profileName">-</span></p>
+                    <p><strong>Email:</strong> <span id="profileEmail">-</span></p>
+                    <p><strong>Role:</strong> <span id="profileRole">-</span></p>
+                </div>
+                <form id="profileForm" class="profile-form" style="display: none;">
+                    <div class="form-group">
+                        <label for="editProfileName">Name</label>
+                        <input type="text" id="editProfileName" required>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" id="saveProfileBtn" class="btn btn-primary btn-sm">Save</button>
+                        <button type="button" id="cancelProfileBtn" class="btn btn-secondary btn-sm">Cancel</button>
+                    </div>
+                </form>
             </div>
 
             <!-- Recent Bookings -->
@@ -103,6 +136,19 @@
             </div>
         </main>
     </div>
+
+    <!-- Chat Bot Widget -->
+    <div id="chatBotWidget" class="chat-bot-widget" style="display: none;">
+        <div class="chat-header">💬 ResBook Assistant</div>
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" class="chat-input" placeholder="Ask me something...">
+            <button id="chatSendBtn" class="btn btn-sm btn-primary">Send</button>
+        </div>
+    </div>
+
+    <!-- Chat Toggle Button -->
+    <button id="chatToggle" class="chat-toggle">💬</button>
 
     <script src="js/app.js"></script>
 </body>
