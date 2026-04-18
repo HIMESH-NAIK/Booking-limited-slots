@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Resource Booking System - Make a Booking</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="alertContainer"></div>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>📚 ResBook</h2>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-link" onclick="goToDashboard(); return false;">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+                <a href="#" class="nav-link active" onclick="goToBooking(); return false;">
+                    <span class="icon">📅</span> Book Resource
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn btn-logout">
+                    <span class="icon">🚪</span> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div>
+                    <h1>📅 Make a Booking</h1>
+                    <p class="text-muted">Reserve a resource for your needs</p>
+                </div>
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <div>
+                        <div class="user-name" id="userName">User</div>
+                        <div class="user-role" id="userRole">User</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Form -->
+            <div class="card">
+                <div class="form-group">
+                    <label for="resourceSelect">Select Resource</label>
+                    <select id="resourceSelect" required>
+                        <option value="">-- Select a resource --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="bookingDate">Date</label>
+                    <input type="date" id="bookingDate" required>
+                    <script>
+                        // Set minimum date to today
+                        const dateInput = document.getElementById('bookingDate');
+                        const today = new Date().toISOString().split('T')[0];
+                        dateInput.min = today;
+                    </script>
+                </div>
+
+                <div class="form-group">
+                    <label>Available Time Slots</label>
+                    <div id="timeSlotsContainer">
+                        <p class="text-muted">Select resource and date to see available slots</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button id="confirmBookingBtn" class="btn btn-primary btn-lg">
+                        ✓ Confirm Booking
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-lg" onclick="goToDashboard()">
+                        ← Back
+                    </button>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="card">
+                <h3>Legend</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div>
+                        <span style="display: inline-block; width: 30px; height: 30px; background-color: #10b981; border-radius: 0.5rem; border: 2px solid #10b981; margin-right: 0.5rem;"></span>
+                        <strong>Available</strong>
+                    </div>
+                    <div>
+                        <span style="display: inline-block; width: 30px; height: 30px; background-color: #2563eb; border-radius: 0.5rem; color: white; border: 2px solid #2563eb; margin-right: 0.5rem;">•</span>
+                        <strong>Selected</strong>
+                    </div>
+                    <div>
+                        <span style="display: inline-block; width: 30px; height: 30px; background-color: #ef4444; border-radius: 0.5rem; border: 2px solid #ef4444; margin-right: 0.5rem;"></span>
+                        <strong>Booked</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Info -->
+            <div class="card">
+                <h3>How to Book</h3>
+                <ol style="margin-left: 1.5rem;">
+                    <li>Select the resource you need</li>
+                    <li>Choose your preferred date</li>
+                    <li>Click on an available time slot</li>
+                    <li>Click "Confirm Booking" to complete</li>
+                </ol>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

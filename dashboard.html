@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Resource Booking - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>📚 ResBook</h2>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-link active" data-view="dashboard">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+                <a href="#book" class="nav-link" data-view="book">
+                    <span class="icon">📅</span> Book Room
+                </a>
+                <a href="#my-bookings" class="nav-link" data-view="my-bookings">
+                    <span class="icon">📋</span> My Bookings
+                </a>
+                <a href="#admin" class="nav-link admin-only" data-view="admin" style="display: none;">
+                    <span class="icon">🔧</span> Admin Panel
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn btn-logout">
+                    <span class="icon">🚪</span> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-content">
+                    <h1>Smart Resource Booking System</h1>
+                    <div class="user-profile">
+                        <div class="user-avatar">👤</div>
+                        <div class="user-info">
+                            <p class="user-name" id="userName">User</p>
+                            <p class="user-role" id="userRole">User</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="content-wrapper">
+                
+                <!-- Dashboard View -->
+                <section id="dashboardView" class="view active">
+                    <div class="dashboard-grid">
+                        <div class="card stat-card">
+                            <div class="stat-icon">🏛️</div>
+                            <div class="stat-content">
+                                <h3>Total Rooms</h3>
+                                <p class="stat-number" id="totalRooms">3</p>
+                            </div>
+                        </div>
+
+                        <div class="card stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-content">
+                                <h3>Available Slots</h3>
+                                <p class="stat-number" id="availableSlots">12</p>
+                            </div>
+                        </div>
+
+                        <div class="card stat-card">
+                            <div class="stat-icon">📌</div>
+                            <div class="stat-content">
+                                <h3>Active Bookings</h3>
+                                <p class="stat-number" id="activeBookings">0</p>
+                            </div>
+                        </div>
+
+                        <div class="card stat-card">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-content">
+                                <h3>Total Users</h3>
+                                <p class="stat-number" id="totalUsers">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card recent-bookings">
+                        <h2>Recent Bookings</h2>
+                        <div id="recentBookingsContainer" class="bookings-list">
+                            <p class="empty-state">No bookings yet</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Book Room View -->
+                <section id="bookView" class="view">
+                    <div class="booking-container">
+                        <h2>Book a Room</h2>
+                        
+                        <div class="card booking-form-card">
+                            <form id="bookingForm">
+                                <div class="form-group">
+                                    <label for="userName">Name</label>
+                                    <input type="text" id="formUserName" readonly>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="userEmail">Email</label>
+                                    <input type="email" id="formUserEmail" readonly>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="roomSelect">Select Room</label>
+                                    <select id="roomSelect" required>
+                                        <option value="">-- Choose a room --</option>
+                                        <option value="Room A">Room A (Classroom)</option>
+                                        <option value="Room B">Room B (Meeting Room)</option>
+                                        <option value="Lab 1">Lab 1 (Computer Lab)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="bookingDate">Select Date</label>
+                                    <input type="date" id="bookingDate" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="bookingTime">Select Time Slot</label>
+                                    <select id="bookingTime" required>
+                                        <option value="">-- Choose a time --</option>
+                                        <option value="09:00">09:00 AM</option>
+                                        <option value="10:00">10:00 AM</option>
+                                        <option value="11:00">11:00 AM</option>
+                                        <option value="12:00">12:00 PM</option>
+                                        <option value="13:00">01:00 PM</option>
+                                        <option value="14:00">02:00 PM</option>
+                                        <option value="15:00">03:00 PM</option>
+                                        <option value="16:00">04:00 PM</option>
+                                    </select>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary btn-full">
+                                    Confirm Booking
+                                </button>
+                            </form>
+                            <div id="bookingError" class="error-message"></div>
+                            <div id="bookingSuccess" class="success-message"></div>
+                        </div>
+
+                        <!-- Availability Display -->
+                        <div class="card availability-card">
+                            <h3>Availability Calendar</h3>
+                            <div id="availabilityDisplay" class="availability-grid">
+                                <p>Select room and date to see availability</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- My Bookings View -->
+                <section id="myBookingsView" class="view">
+                    <div class="bookings-container">
+                        <h2>My Bookings</h2>
+
+                        <div class="card bookings-card">
+                            <div class="bookings-filters">
+                                <input 
+                                    type="text" 
+                                    id="filterRoom" 
+                                    placeholder="Filter by room..."
+                                    class="filter-input"
+                                >
+                            </div>
+
+                            <div class="table-wrapper">
+                                <table class="bookings-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Room</th>
+                                            <th>Date</th>
+                                            <th>Time</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="myBookingsTable">
+                                        <tr>
+                                            <td colspan="6" class="empty-state">No bookings found</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Admin Panel View -->
+                <section id="adminView" class="view admin-only">
+                    <div class="admin-container">
+                        <h2>Admin Panel</h2>
+
+                        <!-- Tabs -->
+                        <div class="admin-tabs">
+                            <button class="admin-tab-btn active" data-tab="all-bookings">
+                                All Bookings
+                            </button>
+                            <button class="admin-tab-btn" data-tab="manage-resources">
+                                Manage Resources
+                            </button>
+                        </div>
+
+                        <!-- All Bookings Tab -->
+                        <div id="allBookingsTab" class="admin-tab-content active">
+                            <div class="card bookings-card">
+                                <h3>All System Bookings</h3>
+                                <div class="table-wrapper">
+                                    <table class="bookings-table">
+                                        <thead>
+                                            <tr>
+                                                <th>User</th>
+                                                <th>Room</th>
+                                                <th>Date</th>
+                                                <th>Time</th>
+                                                <th>Role</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="allBookingsTable">
+                                            <tr>
+                                                <td colspan="7" class="empty-state">No bookings found</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manage Resources Tab -->
+                        <div id="manageResourcesTab" class="admin-tab-content">
+                            <div class="card resources-card">
+                                <h3>Room Management</h3>
+                                <div id="resourcesList" class="resources-grid">
+                                    <div class="resource-item">
+                                        <h4>Room A</h4>
+                                        <p>Classroom</p>
+                                        <button class="btn btn-small">Edit</button>
+                                    </div>
+                                    <div class="resource-item">
+                                        <h4>Room B</h4>
+                                        <p>Meeting Room</p>
+                                        <button class="btn btn-small">Edit</button>
+                                    </div>
+                                    <div class="resource-item">
+                                        <h4>Lab 1</h4>
+                                        <p>Computer Lab</p>
+                                        <button class="btn btn-small">Edit</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Override Booking Modal -->
+    <div id="overrideModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Override Booking</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>This slot is already booked by a user. As admin, you can override it.</p>
+                <p class="warning">⚠️ The previous booking will be cancelled.</p>
+                <div id="overrideInfo"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelOverride" class="btn btn-secondary">Cancel</button>
+                <button id="confirmOverride" class="btn btn-primary">Override Booking</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Booking Modal -->
+    <div id="cancelModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Cancel Booking</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this booking?</p>
+                <div id="cancelInfo"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelConfirm" class="btn btn-secondary">No, Keep It</button>
+                <button id="cancelDelete" class="btn btn-danger">Yes, Cancel Booking</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="script.js"></script>
+    <script>
+        // Display current user information
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUserStr = localStorage.getItem('currentUser');
+            if (currentUserStr) {
+                const currentUser = JSON.parse(currentUserStr);
+                const userNameEl = document.getElementById('userName');
+                const userRoleEl = document.getElementById('userRole');
+                
+                if (userNameEl) userNameEl.textContent = currentUser.name;
+                if (userRoleEl) userRoleEl.textContent = currentUser.role;
+                
+                // Show admin panel if user is admin
+                if (currentUser.role === 'Admin') {
+                    const adminLinks = document.querySelectorAll('.admin-only');
+                    adminLinks.forEach(link => {
+                        link.style.display = '';
+                        link.classList.add('show');
+                    });
+                    
+                    const adminView = document.querySelector('[data-view="admin"]');
+                    if (adminView) {
+                        adminView.style.display = '';
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
